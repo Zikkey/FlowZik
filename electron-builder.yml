@@ -1,0 +1,27 @@
+appId: com.flowzik
+productName: FlowZik
+directories:
+  buildResources: resources
+  output: dist
+asar: true
+# Only include bundled output — Vite already bundles everything,
+# no need for node_modules at runtime
+files:
+  - out/**/*
+  - package.json
+  - '!node_modules'
+  - '!src'
+  - '!**/*.map'
+# Only keep locales we actually use
+electronLanguages:
+  - en-US
+  - ru
+# Remove unnecessary Chromium/Electron files after packaging
+afterPack: ./scripts/afterPack.js
+win:
+  target:
+    - target: dir
+      arch:
+        - x64
+  icon: resources/icon.png
+  signAndEditExecutable: false
