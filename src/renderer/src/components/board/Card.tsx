@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, type MouseEvent as ReactMouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import {
-  GripVertical, CheckCircle2, ChevronDown, ChevronRight,
+  CheckCircle2, ChevronDown, ChevronRight,
   Eye, Copy, ArrowRightLeft, Flag, Tag, CheckSquare, Archive, Trash2, Pin
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -335,13 +335,14 @@ export function Card({ card, isDragOverlay, dimmed }: CardProps) {
 
   return (
     <>
-    {ctxMenu && (
+    {ctxMenu && createPortal(
       <ContextMenu
         x={ctxMenu.x}
         y={ctxMenu.y}
         items={getContextMenuItems()}
         onClose={() => setCtxMenu(null)}
-      />
+      />,
+      document.body
     )}
     {showPreview && previewRect && !ctxMenu && createPortal(
       <CardPreview card={card} anchorRect={previewRect} />,
@@ -351,6 +352,8 @@ export function Card({ card, isDragOverlay, dimmed }: CardProps) {
       ref={setRefs}
       data-card={card.id}
       data-dropzone
+      {...attributes}
+      {...listeners}
       style={{
         ...style,
         ...(hasPriority ? {
@@ -359,7 +362,7 @@ export function Card({ card, isDragOverlay, dimmed }: CardProps) {
         } : {})
       }}
       className={cn(
-        'group border cursor-pointer',
+        'group border cursor-grab active:cursor-grabbing',
         BORDER_RADIUS_MAP[cardBorderRadius] ?? 'rounded-lg',
         'transition-all duration-150',
         'shadow-sm hover:shadow-md overflow-hidden',
@@ -368,9 +371,9 @@ export function Card({ card, isDragOverlay, dimmed }: CardProps) {
         isDragging && 'opacity-40',
         isDragOverlay && 'shadow-xl rotate-2 border-accent/50',
         card.completed && 'opacity-50',
-        isSelected && 'ring-2 ring-accent ring-offset-1 ring-offset-surface-secondary',
-        isFocused && !isSelected && 'ring-2 ring-accent/50',
-        fileDragOver && 'ring-2 ring-accent border-accent bg-accent/5',
+        isSelected && 'outline outline-2 outline-offset-1 outline-[rgb(var(--accent))]',
+        isFocused && !isSelected && 'outline outline-2 outline-[rgb(var(--accent)/0.5)]',
+        fileDragOver && 'outline outline-2 outline-[rgb(var(--accent))] border-accent bg-accent/5',
         dimmed && 'opacity-30 scale-[0.97] pointer-events-none'
       )}
       onClick={() => { !isDragging && setActiveCardId(card.id); setShowPreview(false) }}
@@ -393,15 +396,6 @@ export function Card({ card, isDragOverlay, dimmed }: CardProps) {
         cardDensity === 'compact' ? 'px-2 py-1.5' : cardDensity === 'spacious' ? 'p-4' : 'p-3'
       )}>
         <div className="flex items-start gap-1">
-          <button
-            {...attributes}
-            {...listeners}
-            className="mt-0.5 p-0.5 rounded opacity-0 group-hover:opacity-100 text-content-tertiary hover:text-content-primary hover:bg-surface-tertiary transition-all cursor-grab active:cursor-grabbing shrink-0"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <GripVertical size={12} />
-          </button>
-
           {/* Completion toggle */}
           <button
             onClick={(e) => {

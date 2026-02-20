@@ -61,6 +61,7 @@ interface AppState {
   soundEnabled: boolean
   glassCards: boolean
   cardDensity: 'compact' | 'comfortable' | 'spacious'
+  focusMode: boolean
 
   setTheme: (theme: Theme) => void
   toggleTheme: () => void
@@ -100,6 +101,7 @@ interface AppState {
   setSoundEnabled: (v: boolean) => void
   setGlassCards: (v: boolean) => void
   setCardDensity: (d: 'compact' | 'comfortable' | 'spacious') => void
+  setFocusMode: (v: boolean) => void
 
   // Titlebar pins
   titlebarPins: TitlebarPin[]
@@ -167,6 +169,7 @@ export const useAppStore = create<AppState>()(
       soundEnabled: true,
       glassCards: false,
       cardDensity: 'comfortable' as const,
+      focusMode: false,
 
       setTheme: (theme) => set({ theme }),
       toggleTheme: () => set((s) => {
@@ -214,6 +217,7 @@ export const useAppStore = create<AppState>()(
       setSoundEnabled: (v) => set({ soundEnabled: v }),
       setGlassCards: (v) => set({ glassCards: v }),
       setCardDensity: (d) => set({ cardDensity: d }),
+      setFocusMode: (v) => set({ focusMode: v }),
 
       boardFolders: [],
       createBoardFolder: (name) => {
@@ -281,6 +285,7 @@ export const useAppStore = create<AppState>()(
         soundEnabled: state.soundEnabled,
         glassCards: state.glassCards,
         cardDensity: state.cardDensity,
+        focusMode: state.focusMode,
         titlebarPins: state.titlebarPins,
         boardFolders: state.boardFolders,
         onboardingComplete: state.onboardingComplete

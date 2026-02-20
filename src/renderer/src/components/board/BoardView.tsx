@@ -51,6 +51,7 @@ export function BoardView() {
   const createBoard = useBoardStore((s) => s.createBoard)
 
   const viewMode = useAppStore((s) => s.viewMode)
+  const focusMode = useAppStore((s) => s.focusMode)
   const boardBackground = useAppStore((s) => s.boardBackground)
   const setSettingsOpen = useAppStore((s) => s.setSettingsOpen)
   const createColumn = useBoardStore((s) => s.createColumn)
@@ -384,7 +385,7 @@ export function BoardView() {
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          <div className="flex gap-4 p-4 h-full items-start">
+          <div className={cn('flex h-full items-start', focusMode ? 'gap-2 p-2' : 'gap-4 p-4')}>
             <SortableContext
               items={board.columnOrder}
               strategy={horizontalListSortingStrategy}

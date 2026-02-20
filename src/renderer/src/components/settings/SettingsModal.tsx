@@ -240,6 +240,8 @@ function CustomizationSection({ lang }: { lang: string }) {
   const setUiScale = useAppStore((s) => s.setUiScale)
   const glassCards = useAppStore((s) => s.glassCards)
   const setGlassCards = useAppStore((s) => s.setGlassCards)
+  const focusMode = useAppStore((s) => s.focusMode)
+  const setFocusMode = useAppStore((s) => s.setFocusMode)
 
   const bgOptions = [
     { value: 'none', label: lang === 'ru' ? 'Нет' : 'None' },
@@ -285,6 +287,11 @@ function CustomizationSection({ lang }: { lang: string }) {
           desc={lang === 'ru' ? 'Glassmorphism — размытие и прозрачность по всему интерфейсу' : 'Glassmorphism — frosted blur across the entire UI'}
         >
           <Toggle checked={glassCards} onChange={setGlassCards} />
+        </SettingsRow>
+        <SettingsRow label={lang === 'ru' ? 'Фокус-режим' : 'Focus mode'}
+          desc={lang === 'ru' ? 'Минимальный интерфейс — убраны лишние кнопки, колонки ближе друг к другу' : 'Minimal UI — hides extra buttons, tighter column spacing'}
+        >
+          <Toggle checked={focusMode} onChange={setFocusMode} />
         </SettingsRow>
       </SectionGroup>
 

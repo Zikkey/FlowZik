@@ -38,6 +38,7 @@ export function BoardHeader() {
   const hasActiveFilters = useFilterStore((s) => s.hasActiveFilters)
 
   const setSearchPanelOpen = useAppStore((s) => s.setSearchPanelOpen)
+  const focusMode = useAppStore((s) => s.focusMode)
 
   const lang = t('sidebar.boards') === 'Доски' ? 'ru' : 'en'
   const [editingTitle, setEditingTitle] = useState(false)
@@ -233,14 +234,18 @@ export function BoardHeader() {
       </div>
 
       {/* Automations */}
-      <Button variant="ghost" size="icon" onClick={() => setAutomationsOpen(true)} title={lang === 'ru' ? 'Автоматизации' : 'Automations'}>
-        <Zap size={16} />
-      </Button>
+      {!focusMode && (
+        <Button variant="ghost" size="icon" onClick={() => setAutomationsOpen(true)} title={lang === 'ru' ? 'Автоматизации' : 'Automations'}>
+          <Zap size={16} />
+        </Button>
+      )}
 
       {/* Stats */}
-      <Button variant="ghost" size="icon" onClick={() => setStatsOpen(!statsOpen)} title={t('boardHeader.stats' as any)}>
-        <BarChart3 size={16} />
-      </Button>
+      {!focusMode && (
+        <Button variant="ghost" size="icon" onClick={() => setStatsOpen(!statsOpen)} title={t('boardHeader.stats' as any)}>
+          <BarChart3 size={16} />
+        </Button>
+      )}
 
       {/* Filters toggle */}
       <Button
@@ -259,7 +264,7 @@ export function BoardHeader() {
       </Button>
 
       {/* Export/Import */}
-      <Dropdown
+      {!focusMode && <Dropdown
         trigger={
           <Button variant="ghost" size="icon" title={t('boardHeader.export')}>
             <Download size={16} />
@@ -293,7 +298,7 @@ export function BoardHeader() {
         <DropdownItem onClick={handleImport}>
           <Upload size={14} /> {t('boardHeader.importJson')}
         </DropdownItem>
-      </Dropdown>
+      </Dropdown>}
 
       <BoardStats boardId={activeBoardId} open={statsOpen} onClose={() => setStatsOpen(false)} />
       <AutomationsModal open={automationsOpen} onClose={() => setAutomationsOpen(false)} />

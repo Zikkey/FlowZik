@@ -353,8 +353,8 @@ export function Sidebar() {
       <aside
         data-tutorial="sidebar"
         className={cn(
-          'h-full bg-surface-secondary border-r border-border flex flex-col transition-all duration-200 shrink-0',
-          sidebarOpen ? 'w-60' : 'w-0 overflow-hidden'
+          'h-full bg-surface-secondary border-r border-border flex flex-col transition-all duration-200 shrink-0 overflow-hidden',
+          sidebarOpen ? 'w-60' : 'w-0'
         )}
       >
         {/* Header */}

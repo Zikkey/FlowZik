@@ -1,5 +1,6 @@
 const fs = require('fs')
 const path = require('path')
+const { rcedit } = require('rcedit')
 
 // Files that are not needed for a Kanban app and can be safely removed.
 // dxcompiler/dxil = WebGPU shader compiler (25+1.5 MB)
@@ -31,5 +32,27 @@ exports.default = async function afterPack(context) {
 
   if (saved > 0) {
     console.log(`  total saved: ${(saved / 1024 / 1024).toFixed(1)} MB`)
+  }
+
+  // Patch exe with custom icon and version info (since signAndEditExecutable is false)
+  const exePath = path.join(dir, `${context.packager.appInfo.productFilename}.exe`)
+  const icoPath = path.resolve(__dirname, '..', 'resources', 'icon.ico')
+
+  if (fs.existsSync(exePath) && fs.existsSync(icoPath)) {
+    console.log('  patching exe icon and version info...')
+    const pkg = require('../package.json')
+    await rcedit(exePath, {
+      icon: icoPath,
+      'version-string': {
+        ProductName: 'FlowZik',
+        FileDescription: 'FlowZik — Desktop Kanban Board',
+        CompanyName: 'zikkey',
+        LegalCopyright: 'Copyright (c) 2026 zikkey',
+        OriginalFilename: 'FlowZik.exe',
+      },
+      'file-version': pkg.version,
+      'product-version': pkg.version,
+    })
+    console.log('  exe patched successfully')
   }
 }

@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useSortable } from '@dnd-kit/sortable'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -32,7 +33,9 @@ export function Column({ column, isDragOverlay }: ColumnProps) {
   const deleteColumn = useBoardStore((s) => s.deleteColumn)
   const sortColumnCards = useBoardStore((s) => s.sortColumnCards)
   const archiveColumn = useArchiveStore((s) => s.archiveColumn)
-  const columnWidth = useAppStore((s) => s.columnWidth)
+  const rawColumnWidth = useAppStore((s) => s.columnWidth)
+  const focusMode = useAppStore((s) => s.focusMode)
+  const columnWidth = focusMode ? Math.min(rawColumnWidth, 260) : rawColumnWidth
   const collapsedColumnIds = useAppStore((s) => s.collapsedColumnIds)
   const toggleColumnCollapse = useAppStore((s) => s.toggleColumnCollapse)
   const addToast = useToastStore((s) => s.addToast)
@@ -222,7 +225,7 @@ export function Column({ column, isDragOverlay }: ColumnProps) {
         }}
         data-column={column.id}
         className={cn(
-          'flex flex-col bg-surface-secondary rounded-xl max-h-full',
+          'flex flex-col bg-surface-secondary rounded-xl max-h-full overflow-hidden',
           isDragging && 'opacity-40',
           isDragOverlay && 'shadow-xl rotate-1'
         )}
@@ -372,8 +375,9 @@ export function Column({ column, isDragOverlay }: ColumnProps) {
         </div>
       </div>
 
-      {ctxMenu && (
-        <ContextMenu x={ctxMenu.x} y={ctxMenu.y} items={ctxMenuItems} onClose={() => setCtxMenu(null)} />
+      {ctxMenu && createPortal(
+        <ContextMenu x={ctxMenu.x} y={ctxMenu.y} items={ctxMenuItems} onClose={() => setCtxMenu(null)} />,
+        document.body
       )}
 
       <ConfirmDialog

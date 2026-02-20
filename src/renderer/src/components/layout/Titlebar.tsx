@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react'
-import { Minus, Square, X, Maximize2, Home, StickyNote, Search, LayoutDashboard } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
+import { Minus, Square, X, Maximize2, Home, StickyNote, Search } from 'lucide-react'
 import { useAppStore, useBoardStore } from '@/store'
 import { ContextMenu, type ContextMenuItem } from '@/components/ui/ContextMenu'
+import { BoardIcon } from '@/components/ui/BoardIconPicker'
 import { useTranslation } from '@/hooks/use-translation'
 import { cn } from '@/lib/utils'
 
@@ -18,13 +20,51 @@ export function Titlebar() {
   const setSearchPanelOpen = useAppStore((s) => s.setSearchPanelOpen)
   const titlebarPins = useAppStore((s) => s.titlebarPins)
   const removeTitlebarPin = useAppStore((s) => s.removeTitlebarPin)
+  const reorderTitlebarPins = useAppStore((s) => s.reorderTitlebarPins)
   const boards = useBoardStore((s) => s.boards)
   const [pinCtxMenu, setPinCtxMenu] = useState<{ x: number; y: number; pinId: string } | null>(null)
+
+  // Drag reorder state
+  const [dragPinId, setDragPinId] = useState<string | null>(null)
+  const [dragOverPinId, setDragOverPinId] = useState<string | null>(null)
 
   useEffect(() => {
     window.electronAPI.isMaximized().then(setIsMaximized)
     const unsub = window.electronAPI.onMaximizeChange(setIsMaximized)
     return unsub
+  }, [])
+
+  const handlePinDragStart = useCallback((pinId: string) => {
+    setDragPinId(pinId)
+  }, [])
+
+  const handlePinDragOver = useCallback((e: React.DragEvent, pinId: string) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverPinId(pinId)
+  }, [])
+
+  const handlePinDrop = useCallback((targetPinId: string) => {
+    if (!dragPinId || dragPinId === targetPinId) {
+      setDragPinId(null)
+      setDragOverPinId(null)
+      return
+    }
+    const pins = [...titlebarPins]
+    const fromIdx = pins.findIndex((p) => p.id === dragPinId)
+    const toIdx = pins.findIndex((p) => p.id === targetPinId)
+    if (fromIdx !== -1 && toIdx !== -1) {
+      const [moved] = pins.splice(fromIdx, 1)
+      pins.splice(toIdx, 0, moved)
+      reorderTitlebarPins(pins)
+    }
+    setDragPinId(null)
+    setDragOverPinId(null)
+  }, [dragPinId, titlebarPins, reorderTitlebarPins])
+
+  const handlePinDragEnd = useCallback(() => {
+    setDragPinId(null)
+    setDragOverPinId(null)
   }, [])
 
   return (
@@ -61,7 +101,7 @@ export function Titlebar() {
           <Search size={13} />
         </button>
 
-        {/* Custom pins */}
+        {/* Custom pins — draggable */}
         {titlebarPins.length > 0 && (
           <>
             <div className="w-px h-4 bg-border mx-1" />
@@ -72,6 +112,11 @@ export function Titlebar() {
               return (
                 <button
                   key={pin.id}
+                  draggable
+                  onDragStart={() => handlePinDragStart(pin.id)}
+                  onDragOver={(e) => handlePinDragOver(e, pin.id)}
+                  onDrop={() => handlePinDrop(pin.id)}
+                  onDragEnd={handlePinDragEnd}
                   onClick={() => {
                     if (pin.type === 'board') {
                       setActiveBoardId(pin.targetId)
@@ -84,19 +129,17 @@ export function Titlebar() {
                     setPinCtxMenu({ x: e.clientX, y: e.clientY, pinId: pin.id })
                   }}
                   className={cn(
-                    'no-drag h-6 px-1.5 flex items-center justify-center gap-1 rounded text-[11px] transition-colors',
+                    'no-drag h-6 px-1.5 flex items-center justify-center gap-1 rounded text-[11px] transition-all cursor-grab active:cursor-grabbing',
                     isActive
                       ? 'text-accent bg-accent/10'
-                      : 'text-content-tertiary hover:text-content-primary hover:bg-surface-tertiary'
+                      : 'text-content-tertiary hover:text-content-primary hover:bg-surface-tertiary',
+                    dragPinId === pin.id && 'opacity-40',
+                    dragOverPinId === pin.id && dragPinId !== pin.id && 'ring-1 ring-accent/50'
                   )}
-                  title={pin.label}
+                  title={board?.title ?? pin.label}
                 >
-                  {pin.emoji ? (
-                    <span className="text-xs">{pin.emoji}</span>
-                  ) : (
-                    <LayoutDashboard size={11} />
-                  )}
-                  <span className="max-w-[60px] truncate">{pin.label}</span>
+                  <BoardIcon name={board?.icon} size={11} />
+                  <span className="max-w-[60px] truncate">{board?.title ?? pin.label}</span>
                 </button>
               )
             })}
@@ -124,7 +167,7 @@ export function Titlebar() {
         </button>
       </div>
 
-      {pinCtxMenu && (
+      {pinCtxMenu && createPortal(
         <ContextMenu
           x={pinCtxMenu.x}
           y={pinCtxMenu.y}
@@ -132,7 +175,8 @@ export function Titlebar() {
             { id: 'remove', label: lang === 'ru' ? 'Убрать закрепление' : 'Remove pin', icon: <X size={14} />, danger: true, onClick: () => removeTitlebarPin(pinCtxMenu.pinId) }
           ]}
           onClose={() => setPinCtxMenu(null)}
-        />
+        />,
+        document.body
       )}
     </div>
   )

@@ -72,8 +72,8 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
   return (
     <div
       ref={menuRef}
-      className="fixed z-[200] bg-surface-elevated border border-border rounded-xl shadow-2xl py-1 min-w-[180px] max-w-[260px]"
-      style={{ left: pos.x, top: pos.y }}
+      className="fixed z-[200] bg-surface-elevated border border-border rounded-xl shadow-2xl py-1 min-w-[180px] max-w-[260px] no-drag"
+      style={{ left: pos.x, top: pos.y, WebkitAppRegion: 'no-drag' } as React.CSSProperties}
       onMouseDown={(e) => e.stopPropagation()}
       onContextMenu={(e) => e.preventDefault()}
     >
