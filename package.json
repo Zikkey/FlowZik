@@ -10,8 +10,8 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "postinstall": "electron-builder install-app-deps",
-    "pack": "npm run build && electron-builder --dir",
-    "dist": "npm run build && electron-builder"
+    "pack": "npm run build && electron-builder --dir && node scripts/patch-exe.js",
+    "dist": "npm run build && electron-builder && node scripts/patch-exe.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

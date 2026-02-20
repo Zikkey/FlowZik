@@ -52,8 +52,8 @@ export function HeatmapView() {
       const colCards = col.cardIds.map((cid) => {
         const card = cards[cid]
         if (!card) return null
-        if (q && !card.title.toLowerCase().includes(q) && !card.description.toLowerCase().includes(q)) return null
-        if (filterLabelIds.length > 0 && !card.labels.some((l) => filterLabelIds.includes(l.id))) return null
+        if (q && !(card.title ?? '').toLowerCase().includes(q) && !(card.description ?? '').toLowerCase().includes(q)) return null
+        if (filterLabelIds.length > 0 && !(card.labels ?? []).some((l) => filterLabelIds.includes(l.id))) return null
         if (filterPriorities.length > 0 && !filterPriorities.includes(card.priority)) return null
         if (showOverdueOnly && getDueDateStatus(card.dueDate) !== 'overdue') return null
         const hoursAgo = differenceInHours(now, parseISO(card.updatedAt))

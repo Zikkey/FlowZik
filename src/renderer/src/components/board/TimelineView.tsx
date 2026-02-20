@@ -48,8 +48,8 @@ export function TimelineView() {
       for (const cardId of col.cardIds) {
         const card = cards[cardId]
         if (!card || !card.dueDate) continue
-        if (q && !card.title.toLowerCase().includes(q) && !card.description.toLowerCase().includes(q)) continue
-        if (filterLabelIds.length > 0 && !card.labels.some((l) => filterLabelIds.includes(l.id))) continue
+        if (q && !(card.title ?? '').toLowerCase().includes(q) && !(card.description ?? '').toLowerCase().includes(q)) continue
+        if (filterLabelIds.length > 0 && !(card.labels ?? []).some((l) => filterLabelIds.includes(l.id))) continue
         if (filterPriorities.length > 0 && !filterPriorities.includes(card.priority)) continue
         if (showOverdueOnly && getDueDateStatus(card.dueDate) !== 'overdue') continue
         result.push({ card, colTitle: col.title, colColor: col.color })

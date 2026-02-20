@@ -1,6 +1,7 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { join } from 'path'
-import { registerIpcHandlers } from './ipc-handlers'
+import { registerIpcHandlers, getStore } from './ipc-handlers'
+import { startApiServer, stopApiServer, isApiServerRunning } from './api-server'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -47,12 +48,31 @@ app.whenReady().then(() => {
   registerIpcHandlers()
   createWindow()
 
+  // API server toggle IPC
+  ipcMain.handle('api:start', () => {
+    const store = getStore()
+    if (store) startApiServer(store)
+    return isApiServerRunning()
+  })
+  ipcMain.handle('api:stop', () => {
+    stopApiServer()
+    return false
+  })
+  ipcMain.handle('api:status', () => isApiServerRunning())
+
+  // Auto-start API if it was enabled previously
+  const store = getStore()
+  if (store && store.get('api-enabled') === true) {
+    startApiServer(store)
+  }
+
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
 
 app.on('window-all-closed', () => {
+  stopApiServer()
   if (process.platform !== 'darwin') {
     app.quit()
   }

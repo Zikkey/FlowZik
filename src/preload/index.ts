@@ -52,6 +52,17 @@ const electronAPI = {
 
   showNotification: (title: string, body: string): void => {
     ipcRenderer.send('notification:show', title, body)
+  },
+
+  // API server
+  apiStart: (): Promise<boolean> => ipcRenderer.invoke('api:start'),
+  apiStop: (): Promise<boolean> => ipcRenderer.invoke('api:stop'),
+  apiStatus: (): Promise<boolean> => ipcRenderer.invoke('api:status'),
+
+  onExternalStoreUpdate: (callback: () => void): (() => void) => {
+    const handler = (): void => { callback() }
+    ipcRenderer.on('store:external-update', handler)
+    return () => { ipcRenderer.removeListener('store:external-update', handler) }
   }
 }
 

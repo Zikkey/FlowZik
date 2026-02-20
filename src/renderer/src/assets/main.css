@@ -53,20 +53,28 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Custom scrollbar */
+  /* Custom scrollbar — global */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--border-hover)) transparent;
+  }
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
+    border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgb(var(--border-color));
+    background: rgb(var(--border-hover));
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgb(var(--border-hover));
+    background: rgb(var(--text-tertiary));
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
   }
 
   /* Drag region for titlebar */
@@ -311,16 +319,21 @@
 
 /* Cards — frosted card surfaces */
 .glass-mode [data-card] {
-  background-color: rgb(var(--bg-elevated) / 0.35) !important;
   backdrop-filter: blur(16px) saturate(1.4) !important;
   -webkit-backdrop-filter: blur(16px) saturate(1.4) !important;
-  border-color: rgb(255 255 255 / 0.1) !important;
   box-shadow: 0 2px 12px rgb(0 0 0 / 0.06), inset 0 1px 0 rgb(255 255 255 / 0.08) !important;
 }
+/* Only override bg/border for non-priority cards (no inline style set) */
+.glass-mode [data-card].bg-surface-elevated {
+  background-color: rgb(var(--bg-elevated) / 0.35) !important;
+  border-color: rgb(255 255 255 / 0.1) !important;
+}
 .glass-mode [data-card]:hover {
+  box-shadow: 0 4px 20px rgb(0 0 0 / 0.1), inset 0 1px 0 rgb(255 255 255 / 0.1) !important;
+}
+.glass-mode [data-card].bg-surface-elevated:hover {
   background-color: rgb(var(--bg-elevated) / 0.45) !important;
   border-color: rgb(255 255 255 / 0.18) !important;
-  box-shadow: 0 4px 20px rgb(0 0 0 / 0.1), inset 0 1px 0 rgb(255 255 255 / 0.1) !important;
 }
 
 /* Elevated surfaces (modals, panels, dropdowns) */

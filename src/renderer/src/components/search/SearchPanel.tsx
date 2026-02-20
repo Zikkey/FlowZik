@@ -154,15 +154,15 @@ export function SearchPanel() {
       if (!q && !hasTags) continue // Don't list all cards when no query
 
       if (q) {
-        const titleMatch = card.title.toLowerCase().includes(q)
-        const descMatch = card.description.toLowerCase().includes(q)
-        const subtaskMatch = card.subtasks.some((s) => s.title.toLowerCase().includes(q))
-        const commentMatch = card.comments.some((c) => c.text.toLowerCase().includes(q))
+        const titleMatch = (card.title ?? '').toLowerCase().includes(q)
+        const descMatch = (card.description ?? '').toLowerCase().includes(q)
+        const subtaskMatch = (card.subtasks ?? []).some((s) => (s.title ?? '').toLowerCase().includes(q))
+        const commentMatch = (card.comments ?? []).some((c) => (c.text ?? '').toLowerCase().includes(q))
         const checklistMatch = (card.checklists ?? []).some((cl) =>
-          cl.title.toLowerCase().includes(q) ||
-          cl.items.some((it) => it.title.toLowerCase().includes(q))
+          (cl.title ?? '').toLowerCase().includes(q) ||
+          (cl.items ?? []).some((it) => (it.title ?? '').toLowerCase().includes(q))
         )
-        const labelMatch = card.labels.some((l) => l.name.toLowerCase().includes(q))
+        const labelMatch = (card.labels ?? []).some((l) => (l.name ?? '').toLowerCase().includes(q))
         matches = titleMatch || descMatch || subtaskMatch || commentMatch || checklistMatch || labelMatch
       } else if (hasTags) {
         matches = true // tags only, will be filtered below
@@ -176,7 +176,7 @@ export function SearchPanel() {
         switch (tag.type) {
           case 'label': {
             const v = tag.value.toLowerCase()
-            if (!card.labels.some((l) => l.name.toLowerCase().includes(v))) passesFilters = false
+            if (!(card.labels ?? []).some((l) => (l.name ?? '').toLowerCase().includes(v))) passesFilters = false
             break
           }
           case 'priority': {
@@ -191,8 +191,8 @@ export function SearchPanel() {
           case 'has': {
             const v = tag.value.toLowerCase()
             if (v === 'attachment' && (!card.attachments || card.attachments.length === 0)) passesFilters = false
-            if (v === 'subtask' && card.subtasks.length === 0) passesFilters = false
-            if (v === 'description' && !card.description.trim()) passesFilters = false
+            if (v === 'subtask' && (card.subtasks ?? []).length === 0) passesFilters = false
+            if (v === 'description' && !(card.description ?? '').trim()) passesFilters = false
             break
           }
           case 'is': {
@@ -212,14 +212,14 @@ export function SearchPanel() {
       let desc = `${boardName} › ${colName}`
 
       // Show where the match was found if not in title
-      if (q && !card.title.toLowerCase().includes(q)) {
-        if (card.labels.some((l) => l.name.toLowerCase().includes(q))) {
+      if (q && !(card.title ?? '').toLowerCase().includes(q)) {
+        if ((card.labels ?? []).some((l) => (l.name ?? '').toLowerCase().includes(q))) {
           desc += ` · ${lang === 'ru' ? 'метка' : 'label'}`
-        } else if (card.description.toLowerCase().includes(q)) {
+        } else if ((card.description ?? '').toLowerCase().includes(q)) {
           desc += ` · ${lang === 'ru' ? 'описание' : 'description'}`
-        } else if (card.subtasks.some((s) => s.title.toLowerCase().includes(q))) {
+        } else if ((card.subtasks ?? []).some((s) => (s.title ?? '').toLowerCase().includes(q))) {
           desc += ` · ${lang === 'ru' ? 'подзадача' : 'subtask'}`
-        } else if (card.comments.some((c) => c.text.toLowerCase().includes(q))) {
+        } else if ((card.comments ?? []).some((c) => (c.text ?? '').toLowerCase().includes(q))) {
           desc += ` · ${lang === 'ru' ? 'комментарий' : 'comment'}`
         } else {
           desc += ` · ${lang === 'ru' ? 'чек-лист' : 'checklist'}`
@@ -373,11 +373,11 @@ export function SearchPanel() {
   let itemIdx = 0
 
   return (
-    <div data-tutorial="search-panel" className="fixed inset-0 z-[100] flex items-start justify-center pt-[12vh] px-4" onClick={close}>
+    <div data-tutorial="search-panel" className="fixed inset-0 z-[100] flex items-start justify-center pt-[12vh] px-4" onMouseDown={close}>
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
       <div
         className="relative w-full max-w-xl bg-surface-elevated border border-border rounded-xl shadow-2xl overflow-hidden animate-scale-in"
-        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Input */}
         <div className="flex items-center gap-2 px-4 border-b border-border">

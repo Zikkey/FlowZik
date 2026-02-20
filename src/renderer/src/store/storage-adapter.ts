@@ -35,6 +35,12 @@ if (typeof window !== 'undefined') {
   }, 15_000)
 }
 
+/** Discard pending debounced writes (used when API overwrites store externally). */
+export function dropPendingWrites(): void {
+  if (flushTimer) { clearTimeout(flushTimer); flushTimer = null }
+  pendingWrites.clear()
+}
+
 export const electronStoreStorage: StateStorage = {
   getItem: async (name: string): Promise<string | null> => {
     const value = await window.electronAPI.storeGet(name)

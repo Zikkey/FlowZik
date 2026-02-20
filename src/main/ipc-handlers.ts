@@ -73,6 +73,10 @@ class JsonStore {
 
 let store: JsonStore
 
+export function getStore(): JsonStore {
+  return store
+}
+
 export function registerIpcHandlers(): void {
   store = new JsonStore('flowzik-data')
 
