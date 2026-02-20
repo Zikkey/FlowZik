@@ -304,12 +304,12 @@ export const useBoardStore = create<BoardState>()(
         set((state) => {
           const card = state.cards[id]
           if (!card) return state
-          return {
-            cards: {
-              ...state.cards,
-              [id]: { ...card, ...updates, updatedAt: new Date().toISOString() }
-            }
+          const merged = { ...card, ...updates, updatedAt: new Date().toISOString() }
+          // Auto-complete all subtasks when card is marked as completed
+          if (updates.completed === true && merged.subtasks?.length) {
+            merged.subtasks = merged.subtasks.map((s: any) => ({ ...s, completed: true }))
           }
+          return { cards: { ...state.cards, [id]: merged } }
         })
       },
 

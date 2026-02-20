@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Trash2, Zap, ZapOff, ArrowRight, Pencil, X } from 'lucide-react'
+import { Plus, Trash2, Zap, ZapOff, ArrowRight, Pencil, X, Sparkles } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Toggle } from '@/components/ui/Checkbox'
 import { Button } from '@/components/ui/Button'
@@ -8,7 +8,7 @@ import { useAutomationStore } from '@/store/automation-store'
 import { useBoardStore, useAppStore } from '@/store'
 import { useTranslation } from '@/hooks/use-translation'
 import { cn } from '@/lib/utils'
-import type { AutomationTrigger, AutomationAction, AutomationTriggerType, AutomationActionType, Priority } from '@/types'
+import type { AutomationTrigger, AutomationAction, AutomationTriggerType, AutomationActionType, Priority, Column } from '@/types'
 
 interface AutomationsModalProps {
   open: boolean
@@ -41,6 +41,96 @@ const ACTION_TYPES: { type: AutomationActionType; labelEn: string; labelRu: stri
 
 const PRIORITIES: Priority[] = ['none', 'low', 'medium', 'high', 'urgent']
 
+// ── Preset automation templates ──────────────────────────
+interface AutomationTemplate {
+  id: string
+  nameEn: string
+  nameRu: string
+  descEn: string
+  descRu: string
+  icon: string
+  // 'useLastColumn' means resolve to the last column of the board at apply-time
+  trigger: { type: AutomationTriggerType; useLastColumn?: boolean; priority?: Priority }
+  actions: { type: AutomationActionType; useLastColumn?: boolean; priority?: Priority; days?: number }[]
+}
+
+const AUTOMATION_TEMPLATES: AutomationTemplate[] = [
+  {
+    id: 'done-completed',
+    nameEn: 'Done = Completed',
+    nameRu: 'Готово = Завершено',
+    descEn: 'Mark card complete when moved to last column',
+    descRu: 'Отмечать готовой при перемещении в последнюю колонку',
+    icon: '✅',
+    trigger: { type: 'card_moved_to', useLastColumn: true },
+    actions: [{ type: 'mark_completed' }]
+  },
+  {
+    id: 'subtasks-move-done',
+    nameEn: 'All subtasks → Done',
+    nameRu: 'Все подзадачи → Готово',
+    descEn: 'Move to last column when all subtasks are done',
+    descRu: 'Переместить в последнюю колонку при выполнении всех подзадач',
+    icon: '📋',
+    trigger: { type: 'all_subtasks_completed' },
+    actions: [{ type: 'move_to_column', useLastColumn: true }]
+  },
+  {
+    id: 'auto-deadline-7d',
+    nameEn: 'Auto deadline +7 days',
+    nameRu: 'Авто-дедлайн +7 дней',
+    descEn: 'Set due date to 7 days when card is created',
+    descRu: 'Ставить срок 7 дней при создании карточки',
+    icon: '📅',
+    trigger: { type: 'card_created' },
+    actions: [{ type: 'set_due_date_days', days: 7 }]
+  },
+  {
+    id: 'overdue-urgent',
+    nameEn: 'Overdue → Urgent',
+    nameRu: 'Просрочено → Срочно',
+    descEn: 'Set urgent priority when due date is overdue',
+    descRu: 'Ставить срочный приоритет при просрочке срока',
+    icon: '🔥',
+    trigger: { type: 'due_date_overdue' },
+    actions: [{ type: 'set_priority', priority: 'urgent' }]
+  },
+  {
+    id: 'completed-move-done',
+    nameEn: 'Completed → Done',
+    nameRu: 'Завершено → Готово',
+    descEn: 'Move to last column when marked completed',
+    descRu: 'Переместить в последнюю колонку при завершении',
+    icon: '➡️',
+    trigger: { type: 'card_completed' },
+    actions: [{ type: 'move_to_column', useLastColumn: true }]
+  }
+]
+
+function resolveTemplate(
+  template: AutomationTemplate,
+  columns: Column[]
+): { name: string; trigger: AutomationTrigger; actions: AutomationAction[] } | null {
+  const lastCol = columns[columns.length - 1]
+
+  const trigger: AutomationTrigger = { type: template.trigger.type }
+  if (template.trigger.useLastColumn) {
+    if (!lastCol) return null
+    trigger.columnId = lastCol.id
+  }
+  if (template.trigger.priority) trigger.priority = template.trigger.priority
+
+  const actions: AutomationAction[] = template.actions.map((ta) => {
+    const action: AutomationAction = { type: ta.type }
+    if (ta.useLastColumn && lastCol) action.columnId = lastCol.id
+    if (ta.priority) action.priority = ta.priority
+    if (ta.days != null) action.days = ta.days
+    return action
+  })
+
+  return { name: template.nameRu, trigger, actions }
+}
+
 export function AutomationsModal({ open, onClose }: AutomationsModalProps) {
   const { t } = useTranslation()
   const lang = t('sidebar.boards') === 'Доски' ? 'ru' : 'en'
@@ -56,6 +146,7 @@ export function AutomationsModal({ open, onClose }: AutomationsModalProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [showTemplates, setShowTemplates] = useState(false)
 
   const board = activeBoardId ? boards[activeBoardId] : null
   const boardColumns = board ? board.columnOrder.map((id) => columns[id]).filter(Boolean) : []
@@ -88,6 +179,61 @@ export function AutomationsModal({ open, onClose }: AutomationsModalProps) {
             ? 'Автоматизации выполняют действия при наступлении определённых событий.'
             : 'Automations execute actions when certain events occur.'}
         </p>
+
+        {/* Templates section */}
+        <div className="mb-4">
+          <button
+            onClick={() => setShowTemplates(!showTemplates)}
+            className={cn(
+              'flex items-center gap-2 w-full px-3 py-2 rounded-lg border text-sm transition-all',
+              showTemplates
+                ? 'border-accent/40 bg-accent/5 text-accent'
+                : 'border-border bg-surface-secondary text-content-secondary hover:border-accent/30 hover:text-accent'
+            )}
+          >
+            <Sparkles size={14} />
+            <span className="font-medium">
+              {lang === 'ru' ? 'Быстрые шаблоны' : 'Quick templates'}
+            </span>
+            <span className="text-[11px] text-content-tertiary">
+              {lang === 'ru' ? '— добавить одним кликом' : '— add with one click'}
+            </span>
+            <div className="flex-1" />
+            <span className={cn('text-xs transition-transform', showTemplates && 'rotate-180')}>▼</span>
+          </button>
+
+          {showTemplates && (
+            <div className="grid grid-cols-1 gap-2 mt-2">
+              {AUTOMATION_TEMPLATES.map((tpl) => {
+                const tplName = lang === 'ru' ? tpl.nameRu : tpl.nameEn
+                const tplDesc = lang === 'ru' ? tpl.descRu : tpl.descEn
+                return (
+                  <div
+                    key={tpl.id}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-border bg-surface-secondary hover:border-accent/40 hover:bg-accent/5 transition-all group"
+                  >
+                    <span className="text-lg shrink-0">{tpl.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-content-primary">{tplName}</div>
+                      <div className="text-[11px] text-content-tertiary">{tplDesc}</div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const resolved = resolveTemplate(tpl, boardColumns)
+                        if (resolved) {
+                          createAutomation(activeBoardId, resolved.name, resolved.trigger, resolved.actions)
+                        }
+                      }}
+                      className="shrink-0 px-3 py-1 rounded-md text-xs font-medium bg-accent/10 text-accent hover:bg-accent/20 transition-colors opacity-60 group-hover:opacity-100"
+                    >
+                      {lang === 'ru' ? 'Применить' : 'Apply'}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
 
         {/* Automation list */}
         {boardAutomations.length === 0 && !creating ? (

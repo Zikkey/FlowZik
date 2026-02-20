@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Sun, Moon, Monitor, Palette, Globe, Bell, CreditCard,
   Keyboard, Layout
@@ -513,6 +513,11 @@ function NotificationsSection({ lang }: { lang: string }) {
   const setNotificationsEnabled = useAppStore((s) => s.setNotificationsEnabled)
   const soundEnabled = useAppStore((s) => s.soundEnabled)
   const setSoundEnabled = useAppStore((s) => s.setSoundEnabled)
+  const [apiRunning, setApiRunning] = useState(false)
+
+  useEffect(() => {
+    window.electronAPI.apiStatus().then(setApiRunning)
+  }, [])
   const notifyOverdue = useAppStore((s) => s.notifyOverdue)
   const setNotifyOverdue = useAppStore((s) => s.setNotifyOverdue)
   const notifyDueToday = useAppStore((s) => s.notifyDueToday)
@@ -583,6 +588,28 @@ function NotificationsSection({ lang }: { lang: string }) {
           label={lang === 'ru' ? 'Завершение карточки' : 'Card completion'}
         >
           <Toggle checked={notifyOnComplete} onChange={setNotifyOnComplete} />
+        </SettingsRow>
+      </SectionGroup>
+
+      <SectionGroup title="API">
+        <SettingsRow
+          label={lang === 'ru' ? 'Локальный API' : 'Local API'}
+          desc={lang === 'ru'
+            ? `HTTP API на localhost:9712 для внешнего управления досками${apiRunning ? ' (работает)' : ''}`
+            : `HTTP API on localhost:9712 for external board management${apiRunning ? ' (running)' : ''}`}
+        >
+          <Toggle checked={apiRunning} onChange={async (enabled) => {
+            if (enabled) {
+              const running = await window.electronAPI.apiStart()
+              setApiRunning(running)
+              // Persist preference
+              window.electronAPI.storeSet('api-enabled', true)
+            } else {
+              await window.electronAPI.apiStop()
+              setApiRunning(false)
+              window.electronAPI.storeSet('api-enabled', false)
+            }
+          }} />
         </SettingsRow>
       </SectionGroup>
     </>

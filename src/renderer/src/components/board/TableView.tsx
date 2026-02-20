@@ -52,7 +52,7 @@ export function TableView() {
     let result = allCards
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
-      result = result.filter((c) => c.title.toLowerCase().includes(q) || c.description.toLowerCase().includes(q))
+      result = result.filter((c) => (c.title ?? '').toLowerCase().includes(q) || (c.description ?? '').toLowerCase().includes(q))
     }
     if (labelIds.length > 0) {
       result = result.filter((c) => c.labels.some((l) => labelIds.includes(l.id)))

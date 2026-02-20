@@ -1,4 +1,5 @@
 import { useEffect, Component, type ReactNode } from 'react'
+import { useExternalStoreSync } from '@/hooks/use-external-store-sync'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { BoardView } from '@/components/board/BoardView'
 import { Dashboard } from '@/components/dashboard/Dashboard'
@@ -40,6 +41,7 @@ export default function App() {
   useKeyboardShortcuts()
   useDueNotifications()
   useAutomationRunner()
+  useExternalStoreSync()
   const showDashboard = useAppStore((s) => s.showDashboard)
 
   // Prevent Electron/Chromium default drag-drop behavior (navigating to file)

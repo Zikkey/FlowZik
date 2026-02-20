@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useSortable } from '@dnd-kit/sortable'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -52,6 +52,28 @@ export function Column({ column, isDragOverlay }: ColumnProps) {
   const [title, setTitle] = useState(column.title)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null)
+  const cardsRef = useRef<HTMLDivElement>(null)
+  const columnRef = useRef<HTMLDivElement>(null)
+
+  // Capture wheel on the entire column: if the cards area is scrollable, scroll it
+  // and prevent the event from reaching the board's horizontal scroll container
+  useEffect(() => {
+    const col = columnRef.current
+    if (!col) return
+    const handler = (e: WheelEvent): void => {
+      const el = cardsRef.current
+      if (!el) return
+      const hasOverflow = el.scrollHeight > el.clientHeight
+      if (!hasOverflow) return
+
+      // Prevent board horizontal scroll from stealing the event
+      e.preventDefault()
+      e.stopPropagation()
+      el.scrollTop += e.deltaY
+    }
+    col.addEventListener('wheel', handler, { passive: false })
+    return () => col.removeEventListener('wheel', handler)
+  })
 
   const {
     attributes,
@@ -84,11 +106,11 @@ export function Column({ column, isDragOverlay }: ColumnProps) {
       let matches = true
       if (searchQuery) {
         const q = searchQuery.toLowerCase()
-        if (!card.title.toLowerCase().includes(q) && !card.description.toLowerCase().includes(q)) {
+        if (!(card.title ?? '').toLowerCase().includes(q) && !(card.description ?? '').toLowerCase().includes(q)) {
           matches = false
         }
       }
-      if (matches && filterLabelIds.length > 0 && !card.labels.some((l) => filterLabelIds.includes(l.id))) {
+      if (matches && filterLabelIds.length > 0 && !(card.labels ?? []).some((l) => filterLabelIds.includes(l.id))) {
         matches = false
       }
       if (matches && filterPriorities.length > 0 && !filterPriorities.includes(card.priority)) {
@@ -212,20 +234,21 @@ export function Column({ column, isDragOverlay }: ColumnProps) {
   return (
     <>
       <div
-        ref={setNodeRef}
         onMouseEnter={() => setHoveredColumnId(column.id)}
         onMouseLeave={() => setHoveredColumnId(null)}
+        ref={(node) => { setNodeRef(node); (columnRef as any).current = node }}
         style={{
           ...style,
           width: columnWidth,
           minWidth: columnWidth,
+          maxHeight: 'calc(100vh - 7rem)',
           borderTopColor: column.color ?? undefined,
           borderTopWidth: column.color ? '3px' : undefined,
           borderTopStyle: column.color ? 'solid' : undefined
         }}
         data-column={column.id}
         className={cn(
-          'flex flex-col bg-surface-secondary rounded-xl max-h-full overflow-hidden',
+          'flex flex-col bg-surface-secondary rounded-xl overflow-hidden',
           isDragging && 'opacity-40',
           isDragOverlay && 'shadow-xl rotate-1'
         )}
@@ -361,7 +384,10 @@ export function Column({ column, isDragOverlay }: ColumnProps) {
         })()}
 
         {/* Cards */}
-        <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1.5 scrollbar-thin">
+        <div
+          ref={cardsRef}
+          className="flex-1 overflow-y-auto px-2 py-2 space-y-1.5 scrollbar-thin"
+        >
           <SortableContext items={filteredCards.map((c) => c.id)} strategy={verticalListSortingStrategy}>
             {filteredCards.map((card) => (
               <Card key={card.id} card={card} dimmed={dimmedCardIds.has(card.id)} />
